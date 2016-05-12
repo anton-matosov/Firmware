@@ -32,8 +32,8 @@ set MIXER sk450_deadcat
 set PWM_OUT 1234
 
 set PWM_AUX_OUT 1234
-# set PWM_AUX_MIN 900
-# set PWM_AUX_MAX 2100
+set PWM_AUX_MIN 550
+set PWM_AUX_MAX 2500
 set PWM_AUX_RATE 100
 
 gimbal start
