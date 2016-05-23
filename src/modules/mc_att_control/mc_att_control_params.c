@@ -72,6 +72,7 @@ PARAM_DEFINE_FLOAT(MC_PITCH_TC, 0.2f);
  *
  * Roll proportional gain, i.e. desired angular speed in rad/s for error 1 rad.
  *
+ * @unit 1/s
  * @min 0.0
  * @max 8
  * @decimal 2
