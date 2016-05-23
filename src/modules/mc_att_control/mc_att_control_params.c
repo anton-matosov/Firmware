@@ -138,7 +138,7 @@ PARAM_DEFINE_FLOAT(MC_ROLLRATE_FF, 0.0f);
  * @min 0.0
  * @max 10
  * @decimal 2
- * @increment 0.0005
+ * @increment 0.1
  * @group Multicopter Attitude Control
  */
 PARAM_DEFINE_FLOAT(MC_PITCH_P, 6.5f);
