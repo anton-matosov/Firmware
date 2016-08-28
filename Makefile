@@ -111,20 +111,26 @@ else
 	BUILD_DIR_SUFFIX :=
 endif
 
+PX4_SRC := $(shell pwd) 
+
 # Functions
 # --------------------------------------------------------------------
 # describe how to build a cmake config
 define cmake-build
-+@if [ $(PX4_CMAKE_GENERATOR) = "Ninja" ] && [ -e ./build_$@$(BUILD_DIR_SUFFIX)/Makefile ]; then rm -rf ./build_$@$(BUILD_DIR_SUFFIX); fi
-+@if [ ! -e ./build_$@$(BUILD_DIR_SUFFIX)/CMakeCache.txt ]; then Tools/check_submodules.sh && mkdir -p ./build_$@$(BUILD_DIR_SUFFIX) && cd ./build_$@$(BUILD_DIR_SUFFIX) && cmake .. -G$(PX4_CMAKE_GENERATOR) -DCONFIG=$(1) || (cd .. && rm -rf ./build_$@$(BUILD_DIR_SUFFIX)); fi
++@(echo $(PX4_SRC))
++@PX4_BUILD_DIR=$(PX4_SRC)/../PX4Firmware-build/build_$@$(BUILD_DIR_SUFFIX)
++@(echo $(PX4_BUILD_DIR))
++@if [ $(PX4_CMAKE_GENERATOR) = "Ninja" ] && [ -e $(PX4_BUILD_DIR)/Makefile ]; then rm -rf $(PX4_BUILD_DIR); fi
++@if [ ! -e $(PX4_BUILD_DIR)/CMakeCache.txt ]; then Tools/check_submodules.sh && mkdir -p $(PX4_BUILD_DIR) && cd $(PX4_BUILD_DIR) && cmake $(PX4_SRC) -G$(PX4_CMAKE_GENERATOR) -DCONFIG=$(1) || (cd $(PX4_SRC) && rm -rf $(PX4_BUILD_DIR)); fi
 +@Tools/check_submodules.sh
-+@(echo "PX4 CONFIG: $@$(BUILD_DIR_SUFFIX)" && cd ./build_$@$(BUILD_DIR_SUFFIX) && $(PX4_MAKE) $(PX4_MAKE_ARGS) $(ARGS))
++@(echo "PX4 CONFIG: $@$(BUILD_DIR_SUFFIX)" && cd $(PX4_BUILD_DIR) && $(PX4_MAKE) $(PX4_MAKE_ARGS) $(ARGS))
 endef
 
 define cmake-build-other
-+@if [ $(PX4_CMAKE_GENERATOR) = "Ninja" ] && [ -e ./build_$@/Makefile ]; then rm -rf ./build_$@; fi
-+@if [ ! -e ./build_$@/CMakeCache.txt ]; then Tools/check_submodules.sh && mkdir -p ./build_$@ && cd ./build_$@ && cmake $(2) -G$(PX4_CMAKE_GENERATOR) || (cd .. && rm -rf ./build_$@); fi
-+@(cd ./build_$@ && $(PX4_MAKE) $(PX4_MAKE_ARGS) $(ARGS))
++@PX4_BUILD_DIR=$(PX4_SRC)/../PX4Firmware-build/build_$@
++@if [ $(PX4_CMAKE_GENERATOR) = "Ninja" ] && [ -e $(PX4_BUILD_DIR)/Makefile ]; then rm -rf $(PX4_BUILD_DIR); fi
++@if [ ! -e $(PX4_BUILD_DIR)/CMakeCache.txt ]; then Tools/check_submodules.sh && mkdir -p $(PX4_BUILD_DIR) && cd $(PX4_BUILD_DIR) && cmake $(2) -G$(PX4_CMAKE_GENERATOR) || (cd $(PX4_SRC) && rm -rf $(PX4_BUILD_DIR)); fi
++@(cd $(PX4_BUILD_DIR) && $(PX4_MAKE) $(PX4_MAKE_ARGS) $(ARGS))
 endef
 
 # create empty targets to avoid msgs for targets passed to cmake
@@ -238,7 +244,7 @@ run_sitl_ros: sitl_deprecation
 
 gazebo_build:
 	@mkdir -p build_gazebo
-	@if [ ! -e ./build_gazebo/CMakeCache.txt ];then cd build_gazebo && cmake -Wno-dev -G$(PX4_CMAKE_GENERATOR) ../Tools/sitl_gazebo; fi
+	@if [ ! -e ../PX4Firmware-build/build_gazebo/CMakeCache.txt ];then cd build_gazebo && cmake -Wno-dev -G$(PX4_CMAKE_GENERATOR) ../Tools/sitl_gazebo; fi
 	@cd build_gazebo && $(PX4_MAKE) $(PX4_MAKE_ARGS)
 	@cd build_gazebo && $(PX4_MAKE) $(PX4_MAKE_ARGS) sdf
 
