@@ -2804,8 +2804,7 @@ int commander_thread_main(int argc, char *argv[])
 			status_changed = true;
 
 			if (status.failsafe) {
-				mavlink_log_critical(&mavlink_log_pub, "failsafe mode on");
-
+				mavlink_log_critical(&mavlink_log_pub, "failsafe mode on. nav state: %i", status.nav_state);
 			} else {
 				mavlink_log_critical(&mavlink_log_pub, "failsafe mode off");
 			}
