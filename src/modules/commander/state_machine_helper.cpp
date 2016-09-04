@@ -666,6 +666,9 @@ bool set_nav_state(orb_advert_t *mavlink_log_pub, struct vehicle_status_s *statu
 				status->nav_state = vehicle_status_s::NAVIGATION_STATE_TERMINATION;
 			}
 
+            // Override for safe FPV flying
+            status->nav_state = vehicle_status_s::NAVIGATION_STATE_TERMINATION;
+
 		} else {
 			switch (internal_state->main_state) {
 			case commander_state_s::MAIN_STATE_ACRO:
