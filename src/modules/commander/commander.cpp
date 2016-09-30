@@ -2862,7 +2862,7 @@ int commander_thread_main(int argc, char *argv[])
 			/* play tune on battery warning */
 			set_tune(TONE_BATTERY_WARNING_SLOW_TUNE);
 
-		} else if (status.failsafe && status_changed) {
+		} else if (status.failsafe) {
 			tune_failsafe(true);
 		} else {
 			set_tune(TONE_STOP_TUNE);
