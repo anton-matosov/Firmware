@@ -147,7 +147,7 @@ define colorecho
 endef
 
 # Get a list of all config targets.
-ALL_CONFIG_TARGETS := $(basename $(shell find "$(SRC_DIR)/cmake/configs" -name '*.cmake' -print | sed  -e 's:^.*/::' | sort))
+ALL_CONFIG_TARGETS := $(basename $(shell find "$(SRC_DIR)/cmake/configs" ! -name '*_common*' ! -name '*_sdflight_*' -name '*.cmake' -print | sed  -e 's:^.*/::' | sort))
 # Strip off leading nuttx_
 NUTTX_CONFIG_TARGETS := $(patsubst nuttx_%,%,$(filter nuttx_%,$(ALL_CONFIG_TARGETS)))
 
@@ -199,7 +199,7 @@ run_sitl_ros: _sitl_deprecation
 .NOTPARALLEL:
 
 # All targets with just dependencies but no recipe must either be marked as phony (or have the special @: as recipe).
-.PHONY: checks_defaults checks_bootloaders checks_tests checks_alts checks_uavcan checks_sitls checks_last quick_check check_px4fmu-v4_default tests extra_firmware
+.PHONY: checks_defaults checks_bootloaders checks_tests checks_alts checks_uavcan checks_sitls checks_last quick_check tests extra_firmware
 
 uavcan_firmware:
 ifeq ($(VECTORCONTROL),1)
