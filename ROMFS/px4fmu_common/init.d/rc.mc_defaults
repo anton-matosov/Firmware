@@ -33,8 +33,3 @@ if param compare PWM_DISARMED 0
 then
 	param set PWM_DISARMED 900
 fi
-
-if param compare PWM_RATE 0
-then
-	param set PWM_RATE 400
-fi
