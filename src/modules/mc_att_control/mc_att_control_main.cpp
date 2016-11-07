@@ -186,7 +186,14 @@ private:
 		param_t pitch_rate_d;
 		param_t pitch_rate_ff;
 		param_t tpa_breakpoint;
+		param_t tpa_breakpoint_p;
+		param_t tpa_breakpoint_i;
+		param_t tpa_breakpoint_d;
 		param_t tpa_slope;
+		param_t tpa_slope_p;
+		param_t tpa_slope_i;
+		param_t tpa_slope_d;
+		param_t rate_i_mode;
 		param_t yaw_p;
 		param_t yaw_rate_p;
 		param_t yaw_rate_i;
@@ -221,6 +228,7 @@ private:
 
 		float tpa_breakpoint;				/**< Throttle PID Attenuation breakpoint */
 		float tpa_slope;					/**< Throttle PID Attenuation slope */
+		int rate_i_mode;					/**< Mode for I rate usage */
 
 		float roll_rate_max;
 		float pitch_rate_max;
@@ -387,7 +395,14 @@ MulticopterAttitudeControl::MulticopterAttitudeControl() :
 	_params_handles.pitch_rate_d	= 	param_find("MC_PITCHRATE_D");
 	_params_handles.pitch_rate_ff 	= 	param_find("MC_PITCHRATE_FF");
 	_params_handles.tpa_breakpoint 	= 	param_find("MC_TPA_BREAK");
+	_params_handles.tpa_breakpoint_p 	= 	param_find("MC_TPA_BREAK_P");
+	_params_handles.tpa_breakpoint_i 	= 	param_find("MC_TPA_BREAK_I");
+	_params_handles.tpa_breakpoint_d 	= 	param_find("MC_TPA_BREAK_D");
 	_params_handles.tpa_slope	 	= 	param_find("MC_TPA_SLOPE");
+	_params_handles.tpa_slope_p	 	= 	param_find("MC_TPA_SLOPE_P");
+	_params_handles.tpa_slope_i	 	= 	param_find("MC_TPA_SLOPE_I");
+	_params_handles.tpa_slope_d	 	= 	param_find("MC_TPA_SLOPE_D");
+	_params_handles.rate_i_mode	 	= 	param_find("MC_RATE_I_MODE");
 	_params_handles.yaw_p			=	param_find("MC_YAW_P");
 	_params_handles.yaw_rate_p		= 	param_find("MC_YAWRATE_P");
 	_params_handles.yaw_rate_i		= 	param_find("MC_YAWRATE_I");
@@ -488,6 +503,7 @@ MulticopterAttitudeControl::parameters_update()
 	_params.tpa_breakpoint = v;
 	param_get(_params_handles.tpa_slope, &v);
 	_params.tpa_slope = v;
+	param_get(_params_handles.rate_i_mode, &_params.rate_i_mode);
 
 	/* yaw gains */
 	param_get(_params_handles.yaw_p, &v);
@@ -804,16 +820,54 @@ MulticopterAttitudeControl::control_attitude_rates(float dt)
 	_rates_sp_prev = _rates_sp;
 	_rates_prev = rates;
 
-	/* update integral only if not saturated on low limit and if motor commands are not saturated */
-	if (_thrust_sp > MIN_TAKEOFF_THRUST && !_motor_limits.lower_limit && !_motor_limits.upper_limit) {
+	int rateIMode = _params.rate_i_mode;
+
+	if (rateIMode == 0) {
+		/* update integral only if not saturated on low limit and if motor commands are not saturated */
+		if (_thrust_sp > MIN_TAKEOFF_THRUST && !_motor_limits.lower_limit && !_motor_limits.upper_limit) {
+			for (int i = AXIS_INDEX_ROLL; i < AXIS_COUNT; i++) {
+				if (fabsf(_att_control(i)) < _thrust_sp) {
+					float rate_i = _rates_int(i) + rates_i(i) * rates_err(i) * dt;
+	
+					if (PX4_ISFINITE(rate_i) && rate_i > -RATES_I_LIMIT && rate_i < RATES_I_LIMIT &&
+						_att_control(i) > -RATES_I_LIMIT && _att_control(i) < RATES_I_LIMIT &&
+						/* if the axis is the yaw axis, do not update the integral if the limit is hit */
+						!((i == AXIS_INDEX_YAW) && _motor_limits.yaw)) {
+						_rates_int(i) = rate_i;
+					}
+				}
+			}
+		}
+	} else if (rateIMode == 1) {
 		for (int i = AXIS_INDEX_ROLL; i < AXIS_COUNT; i++) {
 			if (fabsf(_att_control(i)) < _thrust_sp) {
 				float rate_i = _rates_int(i) + rates_i(i) * rates_err(i) * dt;
 
 				if (PX4_ISFINITE(rate_i) && rate_i > -RATES_I_LIMIT && rate_i < RATES_I_LIMIT &&
-				    _att_control(i) > -RATES_I_LIMIT && _att_control(i) < RATES_I_LIMIT &&
-				    /* if the axis is the yaw axis, do not update the integral if the limit is hit */
-				    !((i == AXIS_INDEX_YAW) && _motor_limits.yaw)) {
+					_att_control(i) > -RATES_I_LIMIT && _att_control(i) < RATES_I_LIMIT &&
+					/* if the axis is the yaw axis, do not update the integral if the limit is hit */
+					!((i == AXIS_INDEX_YAW) && _motor_limits.yaw)) {
+					_rates_int(i) = rate_i;
+				}
+			}
+		}
+	} else if (rateIMode == 2) {
+		for (int i = AXIS_INDEX_ROLL; i < AXIS_COUNT; i++) {
+			if (fabsf(_att_control(i)) < _thrust_sp) {
+				float rate_i = _rates_int(i) + rates_i(i) * rates_err(i) * dt;
+
+				if (PX4_ISFINITE(rate_i) && rate_i > -RATES_I_LIMIT && rate_i < RATES_I_LIMIT &&
+					_att_control(i) > -RATES_I_LIMIT && _att_control(i) < RATES_I_LIMIT) {
+					_rates_int(i) = rate_i;
+				}
+			}
+		}
+	} else if (rateIMode == 3) {
+		for (int i = AXIS_INDEX_ROLL; i < AXIS_COUNT; i++) {
+			if (fabsf(_att_control(i)) < _thrust_sp) {
+				float rate_i = _rates_int(i) + rates_i(i) * rates_err(i) * dt;
+
+				if (PX4_ISFINITE(rate_i)) {
 					_rates_int(i) = rate_i;
 				}
 			}

@@ -378,9 +378,10 @@ PARAM_DEFINE_FLOAT(MC_ACRO_Y_MAX, 360.0f);
 PARAM_DEFINE_FLOAT(MC_RATT_TH, 1.0f);
 
 /**
- * Threshold for Throttle PID Attenuation (TPA)
+ * TPA Threshold
  *
- * Magnitude of throttle setpoint at which to begin attenuating roll/pitch P gain
+ * Throttle PID Attenuation (TPA)
+ * Magnitude of throttle setpoint at which to begin attenuating roll/pitch PID gain
  *
  * @min 0.0
  * @max 1.0
@@ -389,11 +390,15 @@ PARAM_DEFINE_FLOAT(MC_RATT_TH, 1.0f);
  * @group Multicopter Attitude Control
  */
 PARAM_DEFINE_FLOAT(MC_TPA_BREAK, 1.0f);
+PARAM_DEFINE_FLOAT(MC_TPA_BREAK_P, 1.0f);
+PARAM_DEFINE_FLOAT(MC_TPA_BREAK_I, 1.0f);
+PARAM_DEFINE_FLOAT(MC_TPA_BREAK_D, 1.0f);
 
 /**
- * Slope for Throttle PID Attenuation (TPA)
+ * TPA Rate
  *
- * Rate at which to attenuate roll/pitch P gain
+ * Throttle PID Attenuation (TPA)
+ * Rate at which to attenuate roll/pitch PID gain
  * Attenuation factor is 1.0 when throttle magnitude is below the setpoint
  * Above the setpoint, the attenuation factor is (1 - slope*(abs(throttle)-breakpoint))
  *
@@ -404,3 +409,21 @@ PARAM_DEFINE_FLOAT(MC_TPA_BREAK, 1.0f);
  * @group Multicopter Attitude Control
  */
 PARAM_DEFINE_FLOAT(MC_TPA_SLOPE, 1.0f);
+PARAM_DEFINE_FLOAT(MC_TPA_SLOPE_P, 1.0f);
+PARAM_DEFINE_FLOAT(MC_TPA_SLOPE_I, 1.0f);
+PARAM_DEFINE_FLOAT(MC_TPA_SLOPE_D, 1.0f);
+
+/**
+ * I Rate Mode
+ * @value 0 Original
+ * @value 1 No thrust SP check
+ * @value 2 No yaw limit check
+ * @value 3 No I rate limit checks at all
+ *
+ * @min 0
+ * @max 4
+ * @increment 1
+ * @group Multicopter Attitude Control
+ */
+PARAM_DEFINE_INT32(MC_RATE_I_MODE, 0);
+
