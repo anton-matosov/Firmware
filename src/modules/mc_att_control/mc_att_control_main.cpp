@@ -800,22 +800,24 @@ MulticopterAttitudeControl::control_attitude_rates(float dt)
 	rates(2) = _ctrl_state.yaw_rate;
 
 	/* throttle pid attenuation factor */
-	float tpa =  fmaxf(0.0f, fminf(1.0f, 1.0f - _params.tpa_slope * (fabsf(_v_rates_sp.thrust) - _params.tpa_breakpoint)));
+	float tpa = 1.0f - _params.tpa_slope * (_v_rates_sp.thrust - _params.tpa_breakpoint)/(1.0f - _params.tpa_breakpoint);
+	tpa = fmaxf(0.0f, fminf(1.0f, tpa));
 
 	math::Vector<3> tpaFactor;
-	tpaFactor(0) = tpa; // TPA factor for roll
-	tpaFactor(1) = tpa; // TPA factor for pitch
-	tpaFactor(2) = 1.0; // no adjustments for yaw
+	tpaFactor(AXIS_INDEX_ROLL) = tpa;
+	tpaFactor(AXIS_INDEX_PITCH) = tpa;
+	tpaFactor(AXIS_INDEX_YAW) = 1.0;
 
 	math::Vector<3> rates_p = _params.rate_p.emult(tpaFactor);
-	math::Vector<3> rates_i = _params.rate_i.emult(tpaFactor);
 	math::Vector<3> rates_d = _params.rate_d.emult(tpaFactor);
 
 	/* angular rates error */
 	math::Vector<3> rates_err = _rates_sp - rates;
 
-	_att_control = rates_p.emult(rates_err) + rates_d.emult(_rates_prev - rates) / dt + _rates_int +
-		       _params.rate_ff.emult(_rates_sp);
+	_att_control = rates_p.emult(rates_err) +
+        rates_d.emult(_rates_prev - rates) / dt +
+        _rates_int +
+        _params.rate_ff.emult(_rates_sp);
 
 	_rates_sp_prev = _rates_sp;
 	_rates_prev = rates;
@@ -827,7 +829,7 @@ MulticopterAttitudeControl::control_attitude_rates(float dt)
 		if (_thrust_sp > MIN_TAKEOFF_THRUST && !_motor_limits.lower_limit && !_motor_limits.upper_limit) {
 			for (int i = AXIS_INDEX_ROLL; i < AXIS_COUNT; i++) {
 				if (fabsf(_att_control(i)) < _thrust_sp) {
-					float rate_i = _rates_int(i) + rates_i(i) * rates_err(i) * dt;
+					float rate_i = _rates_int(i) + _params.rate_i(i) * rates_err(i) * dt;
 	
 					if (PX4_ISFINITE(rate_i) && rate_i > -RATES_I_LIMIT && rate_i < RATES_I_LIMIT &&
 						_att_control(i) > -RATES_I_LIMIT && _att_control(i) < RATES_I_LIMIT &&
@@ -841,7 +843,7 @@ MulticopterAttitudeControl::control_attitude_rates(float dt)
 	} else if (rateIMode == 1) {
 		for (int i = AXIS_INDEX_ROLL; i < AXIS_COUNT; i++) {
 			if (fabsf(_att_control(i)) < _thrust_sp) {
-				float rate_i = _rates_int(i) + rates_i(i) * rates_err(i) * dt;
+				float rate_i = _rates_int(i) + _params.rate_i(i) * rates_err(i) * dt;
 
 				if (PX4_ISFINITE(rate_i) && rate_i > -RATES_I_LIMIT && rate_i < RATES_I_LIMIT &&
 					_att_control(i) > -RATES_I_LIMIT && _att_control(i) < RATES_I_LIMIT &&
@@ -854,7 +856,7 @@ MulticopterAttitudeControl::control_attitude_rates(float dt)
 	} else if (rateIMode == 2) {
 		for (int i = AXIS_INDEX_ROLL; i < AXIS_COUNT; i++) {
 			if (fabsf(_att_control(i)) < _thrust_sp) {
-				float rate_i = _rates_int(i) + rates_i(i) * rates_err(i) * dt;
+				float rate_i = _rates_int(i) + _params.rate_i(i) * rates_err(i) * dt;
 
 				if (PX4_ISFINITE(rate_i) && rate_i > -RATES_I_LIMIT && rate_i < RATES_I_LIMIT &&
 					_att_control(i) > -RATES_I_LIMIT && _att_control(i) < RATES_I_LIMIT) {
@@ -865,7 +867,7 @@ MulticopterAttitudeControl::control_attitude_rates(float dt)
 	} else if (rateIMode == 3) {
 		for (int i = AXIS_INDEX_ROLL; i < AXIS_COUNT; i++) {
 			if (fabsf(_att_control(i)) < _thrust_sp) {
-				float rate_i = _rates_int(i) + rates_i(i) * rates_err(i) * dt;
+				float rate_i = _rates_int(i) + _params.rate_i(i) * rates_err(i) * dt;
 
 				if (PX4_ISFINITE(rate_i)) {
 					_rates_int(i) = rate_i;
