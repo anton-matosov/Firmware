@@ -2945,9 +2945,11 @@ int commander_thread_main(int argc, char *argv[])
 
 		} else if ((status.hil_state != vehicle_status_s::HIL_STATE_ON) &&
 			   (battery.warning == battery_status_s::BATTERY_WARNING_LOW)) {
-			/* play tune on battery warning or failsafe */
+			/* play tune on battery warning */
 			set_tune(TONE_BATTERY_WARNING_SLOW_TUNE);
 
+		} else if (status.failsafe) {
+			tune_failsafe(true);
 		} else {
 			set_tune(TONE_STOP_TUNE);
 		}
