@@ -687,6 +687,9 @@ bool set_nav_state(struct vehicle_status_s *status, struct commander_state_s *in
 				status->nav_state = vehicle_status_s::NAVIGATION_STATE_TERMINATION;
 			}
 
+            // Override for safe FPV flying
+            status->nav_state = vehicle_status_s::NAVIGATION_STATE_TERMINATION;
+
 		} else {
 			switch (internal_state->main_state) {
 			case commander_state_s::MAIN_STATE_ACRO:
