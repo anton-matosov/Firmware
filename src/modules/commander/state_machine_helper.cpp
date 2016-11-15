@@ -652,10 +652,11 @@ bool set_nav_state(struct vehicle_status_s *status, struct commander_state_s *in
 		   orb_advert_t *mavlink_log_pub,
 		   const bool data_link_loss_enabled, const bool mission_finished,
 		   const bool stay_in_failsafe, status_flags_s *status_flags, bool landed,
-		   const bool rc_loss_enabled, const int offb_loss_act, const int offb_loss_rc_act)
+		   const int rc_loss_mode, const int offb_loss_act, const int offb_loss_rc_act)
 {
 	navigation_state_t nav_state_old = status->nav_state;
 
+	bool rc_loss_enabled = (rc_loss_mode > 0);
 	bool armed = (status->arming_state == vehicle_status_s::ARMING_STATE_ARMED
 		      || status->arming_state == vehicle_status_s::ARMING_STATE_ARMED_ERROR);
 	bool old_failsafe = status->failsafe;

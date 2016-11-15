@@ -1644,7 +1644,7 @@ int commander_thread_main(int argc, char *argv[])
 	transition_result_t arming_ret;
 
 	int32_t datalink_loss_enabled = 0;
-	int32_t rc_loss_enabled = 0;
+	int32_t rc_loss_mode = 0;
 	int32_t datalink_loss_timeout = 10;
 	float rc_loss_timeout = 0.5;
 	int32_t datalink_regain_timeout = 0;
@@ -1732,7 +1732,7 @@ int commander_thread_main(int argc, char *argv[])
 
 			/* Safety parameters */
 			param_get(_param_enable_datalink_loss, &datalink_loss_enabled);
-			param_get(_param_enable_rc_loss, &rc_loss_enabled);
+			param_get(_param_enable_rc_loss, &rc_loss_mode);
 			param_get(_param_datalink_loss_timeout, &datalink_loss_timeout);
 			param_get(_param_rc_loss_timeout, &rc_loss_timeout);
 			param_get(_param_rc_in_off, &rc_in_off);
@@ -2881,7 +2881,7 @@ int commander_thread_main(int argc, char *argv[])
 						       _mission_result.stay_in_failsafe,
 						       &status_flags,
 						       land_detector.landed,
-						       (rc_loss_enabled > 0),
+						       rc_loss_mode,
 						       offboard_loss_act,
 						       offboard_loss_rc_act);
 
