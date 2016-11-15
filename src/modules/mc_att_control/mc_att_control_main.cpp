@@ -298,6 +298,11 @@ private:
 	void		control_attitude_rates(float dt);
 
 	/**
+	 * Throttle PID attenuation.
+	 */
+	math::Vector<3> pid_attenuations(float tpa_breakpoint, float tpa_slope);
+
+	/**
 	 * Check for vehicle status updates.
 	 */
 	void		vehicle_status_poll();
@@ -401,11 +406,9 @@ MulticopterAttitudeControl::MulticopterAttitudeControl() :
 	_params_handles.pitch_rate_i	= 	param_find("MC_PITCHRATE_I");
 	_params_handles.pitch_rate_d	= 	param_find("MC_PITCHRATE_D");
 	_params_handles.pitch_rate_ff 	= 	param_find("MC_PITCHRATE_FF");
-	_params_handles.tpa_breakpoint 	= 	param_find("MC_TPA_BREAK");
 	_params_handles.tpa_breakpoint_p 	= 	param_find("MC_TPA_BREAK_P");
 	_params_handles.tpa_breakpoint_i 	= 	param_find("MC_TPA_BREAK_I");
 	_params_handles.tpa_breakpoint_d 	= 	param_find("MC_TPA_BREAK_D");
-	_params_handles.tpa_slope	 	= 	param_find("MC_TPA_SLOPE");
 	_params_handles.tpa_slope_p	 	= 	param_find("MC_TPA_SLOPE_P");
 	_params_handles.tpa_slope_i	 	= 	param_find("MC_TPA_SLOPE_I");
 	_params_handles.tpa_slope_d	 	= 	param_find("MC_TPA_SLOPE_D");
@@ -506,11 +509,9 @@ MulticopterAttitudeControl::parameters_update()
 	param_get(_params_handles.pitch_rate_ff, &v);
 	_params.rate_ff(1) = v;
 
-	param_get(_params_handles.tpa_breakpoint, &_params.tpa_breakpoint);
 	param_get(_params_handles.tpa_breakpoint_p, &_params.tpa_breakpoint_p);
 	param_get(_params_handles.tpa_breakpoint_i, &_params.tpa_breakpoint_i);
 	param_get(_params_handles.tpa_breakpoint_d, &_params.tpa_breakpoint_d);
-	param_get(_params_handles.tpa_slope, &_params.tpa_slope);
 	param_get(_params_handles.tpa_slope_p, &_params.tpa_slope_p);
 	param_get(_params_handles.tpa_slope_i, &_params.tpa_slope_i);
 	param_get(_params_handles.tpa_slope_d, &_params.tpa_slope_d);
@@ -792,6 +793,26 @@ MulticopterAttitudeControl::control_attitude(float dt)
 }
 
 /*
+ * Throttle PID attenuation
+ * Input: 'tpa_breakpoint', 'tpa_slope', '_thrust_sp'
+ * Output: 'pidAttenuationPerAxis' vector
+ */
+math::Vector<3>
+MulticopterAttitudeControl::pid_attenuations(float tpa_breakpoint, float tpa_slope)
+{
+	/* throttle pid attenuation factor */
+	float tpa = 1.0f - tpa_slope * (fabsf(_v_rates_sp.thrust) - tpa_breakpoint)/(1.0f - tpa_breakpoint);
+	tpa = fmaxf(TPA_SLOPE_LOWER_LIMIT, fminf(1.0f, tpa));
+
+	math::Vector<3> pidAttenuationPerAxis;
+	pidAttenuationPerAxis(AXIS_INDEX_ROLL) = tpa;
+	pidAttenuationPerAxis(AXIS_INDEX_PITCH) = tpa;
+	pidAttenuationPerAxis(AXIS_INDEX_YAW) = 1.0;
+
+	return pidAttenuationPerAxis;
+}
+
+/*
  * Attitude rates controller.
  * Input: '_rates_sp' vector, '_thrust_sp'
  * Output: '_att_control' vector
@@ -810,25 +831,16 @@ MulticopterAttitudeControl::control_attitude_rates(float dt)
 	rates(1) = _ctrl_state.pitch_rate;
 	rates(2) = _ctrl_state.yaw_rate;
 
-	/* throttle pid attenuation factor */
-	float tpa = 1.0f - _params.tpa_slope * (fabsf(_v_rates_sp.thrust) - _params.tpa_breakpoint)/(1.0f - _params.tpa_breakpoint);
-	tpa = fmaxf(TPA_SLOPE_LOWER_LIMIT, fminf(1.0f, tpa));
-
-	math::Vector<3> pidAttenuationPerAxis;
-	pidAttenuationPerAxis(AXIS_INDEX_ROLL) = tpa;
-	pidAttenuationPerAxis(AXIS_INDEX_PITCH) = tpa;
-	pidAttenuationPerAxis(AXIS_INDEX_YAW) = 1.0;
-
-	math::Vector<3> rates_p = _params.rate_p.emult(pidAttenuationPerAxis);
-	math::Vector<3> rates_i = _params.rate_i.emult(pidAttenuationPerAxis);
-	math::Vector<3> rates_d = _params.rate_d.emult(pidAttenuationPerAxis);
+	math::Vector<3> rates_p_scaled = _params.rate_p.emult(pid_attenuations(_params.tpa_breakpoint_p, _params.tpa_slope_p));
+	math::Vector<3> rates_i_scaled = _params.rate_i.emult(pid_attenuations(_params.tpa_breakpoint_i, _params.tpa_slope_i));
+	math::Vector<3> rates_d_scaled = _params.rate_d.emult(pid_attenuations(_params.tpa_breakpoint_d, _params.tpa_slope_d));
 
 	/* angular rates error */
 	math::Vector<3> rates_err = _rates_sp - rates;
 
-	_att_control = rates_p.emult(rates_err) +
+	_att_control = rates_p_scaled.emult(rates_err) +
         _rates_int +
-        rates_d.emult(_rates_prev - rates) / dt +
+        rates_d_scaled.emult(_rates_prev - rates) / dt +
         _params.rate_ff.emult(_rates_sp);
 
 	_rates_sp_prev = _rates_sp;
@@ -841,7 +853,7 @@ MulticopterAttitudeControl::control_attitude_rates(float dt)
 		if (_thrust_sp > MIN_TAKEOFF_THRUST && !_motor_limits.lower_limit && !_motor_limits.upper_limit) {
 			for (int i = AXIS_INDEX_ROLL; i < AXIS_COUNT; i++) {
 				if (fabsf(_att_control(i)) < _thrust_sp) {
-					float rate_i = _rates_int(i) + _params.rate_i(i) * rates_err(i) * dt;
+					float rate_i = _rates_int(i) + rates_i_scaled(i) * rates_err(i) * dt;
 	
 					if (PX4_ISFINITE(rate_i) && rate_i > -RATES_I_LIMIT && rate_i < RATES_I_LIMIT &&
 						_att_control(i) > -RATES_I_LIMIT && _att_control(i) < RATES_I_LIMIT &&
