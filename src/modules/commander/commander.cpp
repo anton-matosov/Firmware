@@ -3129,19 +3129,28 @@ control_status_leds(vehicle_status_s *status_local, const actuator_armed_s *actu
 
 	/* this runs at around 20Hz, full cycle is 16 ticks = 10/16Hz */
 	if (actuator_armed->armed) {
-		/* armed, solid */
-		led_on(LED_BLUE);
+		if (status.failsafe) {
+			led_off(LED_BLUE);
+			if (leds_counter % 5 == 0) {
+				led_toggle(LED_GREEN);
+			}
+		} else {
+			/* armed, solid */
+			led_on(LED_BLUE);
+		}
 
 	} else if (actuator_armed->ready_to_arm) {
+		led_off(LED_BLUE);
 		/* ready to arm, blink at 1Hz */
 		if (leds_counter % 20 == 0) {
-			led_toggle(LED_BLUE);
+			led_toggle(LED_GREEN);
 		}
 
 	} else {
+		led_off(LED_BLUE);
 		/* not ready to arm, blink at 10Hz */
 		if (leds_counter % 2 == 0) {
-			led_toggle(LED_BLUE);
+			led_toggle(LED_GREEN);
 		}
 	}
 
