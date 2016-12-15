@@ -112,7 +112,7 @@ set PWM_MIN none
 set PWM_MAX none
 set FMU_MODE pwm
 set MAV_TYPE none
-set FAILSAFE none
+set PWM_FAILSAFE none
 
 # Start canned airframe config
 sh /etc/init.d/rc.autostart

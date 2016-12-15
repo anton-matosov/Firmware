@@ -96,9 +96,9 @@ then
 		fi
 	fi
 
-	if [ $FAILSAFE != none ]
+	if [ $PWM_FAILSAFE != none ]
 	then
-		pwm failsafe -d $OUTPUT_DEV $FAILSAFE
+		pwm failsafe -d $OUTPUT_DEV $PWM_FAILSAFE
 	fi
 fi
 
@@ -217,9 +217,9 @@ then
 			pwm disarmed -c ${PWM_ACHDIS} -p ${PWM_AUX_DISARMED} -d ${OUTPUT_AUX_DEV}
 		fi
 
-		if [ $FAILSAFE_AUX != none ]
+		if [ $PWM_FAILSAFE_AUX != none ]
 		then
-			pwm failsafe -d $OUTPUT_AUX_DEV $FAILSAFE
+			pwm failsafe -d $OUTPUT_AUX_DEV $PWM_FAILSAFE_AUX
 		fi
 
 	fi
@@ -235,7 +235,7 @@ unset PWM_AUX_RATE
 unset PWM_AUX_DISARMED
 unset PWM_AUX_MIN
 unset PWM_AUX_MAX
-unset FAILSAFE_AUX
-unset FAILSAFE
+unset PWM_FAILSAFE_AUX
+unset PWM_FAILSAFE
 unset OUTPUT_DEV
 unset OUTPUT_AUX_DEV

@@ -159,7 +159,8 @@ then
 	set PWM_AUX_DISARMED p:PWM_AUX_DISARMED
 	set PWM_AUX_MIN p:PWM_AUX_MIN
 	set PWM_AUX_MAX p:PWM_AUX_MAX
-	set FAILSAFE_AUX none
+	set PWM_FAILSAFE_AUX none
+	set PWM_FAILSAFE none
 	set MK_MODE none
 	set FMU_MODE pwm
 	set AUX_MODE pwm
@@ -167,7 +168,6 @@ then
 	set MAVLINK_COMPANION_DEVICE /dev/ttyS2
 	set EXIT_ON_END no
 	set MAV_TYPE none
-	set FAILSAFE none
 	set USE_IO yes
 
 	#
